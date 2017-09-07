@@ -87,7 +87,11 @@ public:
 private:
   Adafruit_PN532 nfc;
 
-  uint8_t uid[7] = { 0, 0, 0, 0, 0, 0, 0 };  // Buffer to store the returned UID
-  uint8_t numOfSector;                 // Assume Mifare Classic 1K for now (16 4-block sectors)
+  uint8_t uid[7] = { 0, 0, 0, 0, 0, 0, 0 };   // Buffer to store the returned UID
+  uint8_t uidLength;                          // Length of the UID (4 or 7 bytes depending on ISO14443A card type)
+  uint8_t numOfSector;                        // Assume Mifare Classic 1K for now (16 4-block sectors)
+
+  String readMifareClassic(int _numBlock);
+  //String readMifareUltralight(int _numBlock);
 
 };

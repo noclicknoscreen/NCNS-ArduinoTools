@@ -34,27 +34,14 @@ void NFCMifareWrapper::setup(){
 // Write
 void NFCMifareWrapper::formatMifare(){
 
-  uint8_t success;                          // Flag to check if there was an error with the PN532
-  uint8_t uidLength;                        // Length of the UID (4 or 7 bytes depending on ISO14443A card type)
   bool authenticated = false;               // Flag to indicate if the sector is authenticated
   uint8_t blockBuffer[16];                  // Buffer to store block contents
   uint8_t blankAccessBits[3] = { 0xff, 0x07, 0x80 };
   uint8_t idx = 0;
 
-  // Wait for an ISO14443A type card (Mifare, etc.).  When one is found
-  // 'uid' will be populated with the UID, and uidLength will indicate
-  // if the uid is 4 bytes (Mifare Classic) or 7 bytes (Mifare Ultralight)
-  success = nfc.readPassiveTargetID(PN532_MIFARE_ISO14443A, uid, &uidLength);
+  if (isTagPresent()) {
 
-  if (success)
-  {
-    // We seem to have a tag ...
-    // Display some basic information about it
-    Serial.println("Found an ISO14443A card/tag");
-    Serial.print("  UID Length: ");Serial.print(uidLength, DEC);Serial.println(" bytes");
-    Serial.print("  UID Value: ");
-    nfc.PrintHex(uid, uidLength);
-    Serial.println("");
+    uint8_t formatSuccess;                          // Flag to check if there was an error with the PN532
 
     // Make sure this is a Mifare Classic card
     if (uidLength != 4)
@@ -71,8 +58,8 @@ void NFCMifareWrapper::formatMifare(){
     for (idx = 0; idx < numOfSector; idx++)
     {
       // Step 1: Authenticate the current sector using key B 0xFF 0xFF 0xFF 0xFF 0xFF 0xFF
-      success = nfc.mifareclassic_AuthenticateBlock (uid, uidLength, BLOCK_NUMBER_OF_SECTOR_TRAILER(idx), 1, (uint8_t *)KEY_DEFAULT_KEYAB);
-      if (!success)
+      formatSuccess = nfc.mifareclassic_AuthenticateBlock (uid, uidLength, BLOCK_NUMBER_OF_SECTOR_TRAILER(idx), 1, (uint8_t *)KEY_DEFAULT_KEYAB);
+      if (!formatSuccess)
       {
         Serial.print("Authentication failed for sector "); Serial.println(numOfSector);
         return;
@@ -134,10 +121,204 @@ void NFCMifareWrapper::formatMifare(){
   }
 
 }
-/*
-void NFCMifareWrapper::writeMifareBlock(int _numBlock, String _blockValue);
+
+void NFCMifareWrapper::writeMifareBlock(int _numBlock, String _blockValue){
+
+  uint8_t writeSuccess;                          // Flag to check if there was an error with the PN532
+
+  // Wait for an ISO14443A type cards (Mifare, etc.).  When one is found
+  // 'uid' will be populated with the UID, and uidLength will indicate
+  // if the uid is 4 bytes (Mifare Classic) or 7 bytes (Mifare Ultralight)
+  if (isTagPresent()) {
+
+    if (uidLength == 4)
+    {
+      // We probably have a Mifare Classic card ...
+      Serial.println("Seems to be a Mifare Classic card (4 byte UID)");
+
+      // Now we need to try to authenticate it for read/write access
+      // Try with the factory default KeyA: 0xFF 0xFF 0xFF 0xFF 0xFF 0xFF
+      Serial.println("Trying to authenticate block 4 with default KEYA value");
+
+      // Start with block 4 (the first block of sector 1) since sector 0
+      // contains the manufacturer data and it's probably better just
+      // to leave it alone unless you know what you're doing
+      writeSuccess = nfc.mifareclassic_AuthenticateBlock(uid, uidLength, 4, 0, (uint8_t *)KEY_DEFAULT_KEYAB);
+
+      if (writeSuccess)
+      {
+        Serial.println("Sector 1 (Blocks 4..7) has been authenticated");
+        uint8_t data[16];
+
+        for (size_t idxChar = 0; idxChar < 16; idxChar++) {
+          if(idxChar < _blockValue.length()){
+          data[idxChar] = _blockValue[idxChar];
+          }else{
+            data[idxChar] = 0;
+          }
+        }
+
+        // If you want to write something to block 4 to test with, uncomment
+        // the following line and this text should be read back in a minute
+        //memcpy(data, (const uint8_t[]){ 'a', 'd', 'a', 'f', 'r', 'u', 'i', 't', '.', 'c', 'o', 'm', 0, 0, 0, 0 }, sizeof data);
+        writeSuccess = nfc.mifareclassic_WriteDataBlock (_numBlock, data);
+
+        if (writeSuccess)
+        {
+          // Data seems to have been read ... spit it out
+          Serial.print("Writing success Block :");
+          Serial.println(_numBlock);
+
+          Serial.print("Datas :");
+          for (size_t idxChar = 0; idxChar < 16; idxChar++) {
+            Serial.print((char)data[idxChar]);
+          }
+          Serial.println();
+
+        }
+        else
+        {
+          Serial.println("Ooops ... unable to write the requested block.  Try another key?");
+        }
+      }
+      else
+      {
+        Serial.println("Ooops ... authentication failed: Try another key?");
+      }
+    }
+  }
+}
+
+/* ------------------------------------------------------
+// Wait for an ISO14443A type card (Mifare, etc.).  When one is found
+// 'uid' will be populated with the UID, and uidLength will indicate
+// if the uid is 4 bytes (Mifare Classic) or 7 bytes (Mifare Ultralight)
+------------------------------------------------------ */
+
+bool NFCMifareWrapper::isTagPresent(){
+
+  if (nfc.readPassiveTargetID(PN532_MIFARE_ISO14443A, uid, &uidLength))
+  {
+    // We seem to have a tag ...
+    // Display some basic information about it
+    Serial.println("Found an ISO14443A card/tag");
+    Serial.print("  UID Length: ");Serial.print(uidLength, DEC);Serial.println(" bytes");
+    Serial.print("  UID Value: ");
+    nfc.PrintHex(uid, uidLength);
+    Serial.println("");
+
+    return true;
+
+  }else{
+
+    Serial.println("Card/Tag not found");
+
+    return false;
+
+  }
+
+}
 
 // Read
-bool NFCMifareWrapper::isTagPresent();
-String NFCMifareWrapper::readMifareBlock(int _numBlock);
+String NFCMifareWrapper::readMifareBlock(int _numBlock){
+
+  if (uidLength == 4)
+  {
+    // We probably have a Mifare Classic card ...
+    Serial.println("Seems to be a Mifare Classic card (4 byte UID)");
+
+    return readMifareClassic(_numBlock);
+  }
+
+  if (uidLength == 7)
+  {
+    // We probably have a Mifare Ultralight card ...
+    Serial.println("Seems to be a Mifare Ultralight tag (7 byte UID)");
+
+    //return readMifareUltralight(_numBlock);
+  }
+}
+
+String NFCMifareWrapper::readMifareClassic(int _numBlock){
+
+  bool readSuccess;
+  uint8_t data[16];
+  String resultString = "";
+
+  // Now we need to try to authenticate it for read/write access
+  // Try with the factory default KeyA: 0xFF 0xFF 0xFF 0xFF 0xFF 0xFF
+  Serial.println("Trying to authenticate block 4 with default KEYA value");
+  // Start with block 4 (the first block of sector 1) since sector 0
+  // contains the manufacturer data and it's probably better just
+  // to leave it alone unless you know what you're doing
+  readSuccess = nfc.mifareclassic_AuthenticateBlock(uid, uidLength, 4, 0, (uint8_t *)KEY_DEFAULT_KEYAB);
+
+  if (readSuccess)
+  {
+    Serial.println("Sector 1 (Blocks 4..7) has been authenticated");
+
+    // Try to read the contents of block 4
+    readSuccess = nfc.mifareclassic_ReadDataBlock(_numBlock, data);
+
+    if (readSuccess)
+    {
+
+      // Data seems to have been read ... spit it out
+      Serial.print("Reading Block : ");
+      Serial.println(_numBlock);
+      nfc.PrintHexChar(data, 16);
+      Serial.println("");
+
+    }
+    else
+    {
+      Serial.println("Ooops ... unable to read the requested block.  Try another key?");
+    }
+  }
+  else
+  {
+    Serial.println("Ooops ... authentication failed: Try another key?");
+  }
+
+  // Concatenates all char into a String
+  for (size_t idxChar = 0; idxChar < 16; idxChar++) {
+    resultString += (char) data[idxChar];
+  }
+  return resultString;
+  
+}
+/*
+String NFCMifareWrapper::readMifareUltralight(int _numPage){
+
+  bool readSuccess;
+  uint8_t data[32];
+  String resultString = "";
+
+  // Try to read the first general-purpose user page (#4)
+  Serial.print("Reading page :");
+  Serial.println(_numPage);
+
+  readSuccess = nfc.mifareultralight_ReadPage (_numPage, data);
+
+  if (readSuccess)
+  {
+    // Data seems to have been read ... spit it out
+    nfc.PrintHexChar(data, 4);
+    Serial.println("");
+
+    // Wait a bit before reading the card again
+    delay(1000);
+  }
+  else
+  {
+    Serial.println("Ooops ... unable to read the requested page!?");
+  }
+
+  // Concatenates all char into a String
+  for (size_t idxChar = 0; idxChar < 32; idxChar++) {
+    resultString += (char) data[idxChar];
+  }
+  return resultString;
+
+}
 */
