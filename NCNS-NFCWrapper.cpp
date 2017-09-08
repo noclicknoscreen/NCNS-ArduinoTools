@@ -39,9 +39,7 @@ void NFCMifareWrapper::formatMifare(){
   uint8_t blankAccessBits[3] = { 0xff, 0x07, 0x80 };
   uint8_t idx = 0;
 
-  if (isTagPresent()) {
-
-    uint8_t formatSuccess;                          // Flag to check if there was an error with the PN532
+  uint8_t formatSuccess;                          // Flag to check if there was an error with the PN532
 
     // Make sure this is a Mifare Classic card
     if (uidLength != 4)
@@ -118,8 +116,6 @@ void NFCMifareWrapper::formatMifare(){
         return;
       }
     }
-  }
-
 }
 
 void NFCMifareWrapper::writeMifareBlock(int _numBlock, String _blockValue){
@@ -129,9 +125,7 @@ void NFCMifareWrapper::writeMifareBlock(int _numBlock, String _blockValue){
   // Wait for an ISO14443A type cards (Mifare, etc.).  When one is found
   // 'uid' will be populated with the UID, and uidLength will indicate
   // if the uid is 4 bytes (Mifare Classic) or 7 bytes (Mifare Ultralight)
-  if (isTagPresent()) {
-
-    if (uidLength == 4)
+  if (uidLength == 4)
     {
       // We probably have a Mifare Classic card ...
       Serial.println("Seems to be a Mifare Classic card (4 byte UID)");
@@ -186,7 +180,6 @@ void NFCMifareWrapper::writeMifareBlock(int _numBlock, String _blockValue){
         Serial.println("Ooops ... authentication failed: Try another key?");
       }
     }
-  }
 }
 
 /* ------------------------------------------------------
@@ -285,7 +278,7 @@ String NFCMifareWrapper::readMifareClassic(int _numBlock){
     resultString += (char) data[idxChar];
   }
   return resultString;
-  
+
 }
 /*
 String NFCMifareWrapper::readMifareUltralight(int _numPage){
