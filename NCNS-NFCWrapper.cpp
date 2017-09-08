@@ -30,6 +30,35 @@ void NFCMifareWrapper::setup(){
 
 }
 
+/* ------------------------------------------------------
+// Wait for an ISO14443A type card (Mifare, etc.).  When one is found
+// 'uid' will be populated with the UID, and uidLength will indicate
+// if the uid is 4 bytes (Mifare Classic) or 7 bytes (Mifare Ultralight)
+------------------------------------------------------ */
+bool NFCMifareWrapper::isTagPresent(){
+
+  if (nfc.readPassiveTargetID(PN532_MIFARE_ISO14443A, uid, &uidLength))
+  {
+    // We seem to have a tag ...
+    // Display some basic information about it
+    Serial.println("Found an ISO14443A card/tag");
+    Serial.print("  UID Length: ");Serial.print(uidLength, DEC);Serial.println(" bytes");
+    Serial.print("  UID Value: ");
+    nfc.PrintHex(uid, uidLength);
+    Serial.println("");
+
+    return true;
+
+  }else{
+
+    Serial.println("Card/Tag not found");
+
+    return false;
+
+  }
+
+}
+
 
 // Write
 void NFCMifareWrapper::formatMifare(){
@@ -180,36 +209,6 @@ void NFCMifareWrapper::writeMifareBlock(int _numBlock, String _blockValue){
         Serial.println("Ooops ... authentication failed: Try another key?");
       }
     }
-}
-
-/* ------------------------------------------------------
-// Wait for an ISO14443A type card (Mifare, etc.).  When one is found
-// 'uid' will be populated with the UID, and uidLength will indicate
-// if the uid is 4 bytes (Mifare Classic) or 7 bytes (Mifare Ultralight)
------------------------------------------------------- */
-
-bool NFCMifareWrapper::isTagPresent(){
-
-  if (nfc.readPassiveTargetID(PN532_MIFARE_ISO14443A, uid, &uidLength))
-  {
-    // We seem to have a tag ...
-    // Display some basic information about it
-    Serial.println("Found an ISO14443A card/tag");
-    Serial.print("  UID Length: ");Serial.print(uidLength, DEC);Serial.println(" bytes");
-    Serial.print("  UID Value: ");
-    nfc.PrintHex(uid, uidLength);
-    Serial.println("");
-
-    return true;
-
-  }else{
-
-    Serial.println("Card/Tag not found");
-
-    return false;
-
-  }
-
 }
 
 // Read

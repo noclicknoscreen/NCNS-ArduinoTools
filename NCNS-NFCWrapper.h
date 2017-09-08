@@ -75,13 +75,14 @@ public:
 
   // Setup
   void setup();
+  // Check tag presence
+  bool isTagPresent();
 
   // Write
   void formatMifare();
   void writeMifareBlock(int _numBlock, String _blockValue);
 
   // Read
-  bool isTagPresent();
   String readMifareBlock(int _numBlock);
 
 private:
