@@ -46,3 +46,11 @@ float eeprom_read(int addr) {
   return f;
 }
 
+/*************************************************
+   Returns a human readable IP from a string
+ **************************************************/
+String humanReadableIp(IPAddress ip) {
+  return String(ip[0]) + String(".") + String(ip[1]) + String(".") + String(ip[2]) + String(".") + String(ip[3]);
+}
+
+
