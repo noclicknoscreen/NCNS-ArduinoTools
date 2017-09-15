@@ -5,6 +5,8 @@
 
 // ----------------------------------------------------------
 // Do blink a led without delay
+// First you have to setup your pin with this line below
+// pinMode(LED_BUILTIN, OUTPUT);
 // ----------------------------------------------------------
 void ledBlink(unsigned int _led, unsigned int _delayMs) {
   float alternativeSignal = (millis() % _delayMs) / (float)_delayMs;
