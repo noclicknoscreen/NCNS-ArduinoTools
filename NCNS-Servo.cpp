@@ -6,9 +6,10 @@ void ServoWrapper::setup(int _pin, int _centerRef){
 }
 
 void ServoWrapper::maintainCenter(){
+#ifdef SERVO_DEBUG
   Serial.print("Center value : ");
   Serial.println(centerRef);
-
+#endif
   writeServo(centerRef);
 }
 
@@ -23,6 +24,7 @@ void ServoWrapper::continousRotate(float _speed){
   value = centerRef + (_speed * 1000);
   value = constrain(value, 1000, 2000);
 
+#ifdef SERVO_DEBUG
   Serial.print("Sens : ");
   if(value > centerRef){
     Serial.print("+");
@@ -31,7 +33,7 @@ void ServoWrapper::continousRotate(float _speed){
   }
   Serial.print(" Speed value : ");
   Serial.println(value);
-
+#endif
   writeServo(value);
 
 }
