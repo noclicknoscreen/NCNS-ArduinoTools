@@ -1,7 +1,9 @@
-#pragma once
+#ifdef NCNSArduinoTools
+#define NCNSArduinoTools
 
 #include <Arduino.h>
 #include <EEPROM.h>
+#include <Ethernet2.h>
 
 // ----------------------------------------------------------
 // Do blink a led without delay
@@ -33,7 +35,8 @@ void eeprom_write(int addr, float f) {
   for ( int i = 0 ; i < (int)sizeof(f) ; i++ ) {
     EEPROM.write(addr + i, buf[i]);
   }
-  EEPROM.commit();
+  // Seb : commit Seems to not exist into EEPROM lib
+  //EEPROM.commit();
 }
 
 /*************************************************
@@ -55,4 +58,28 @@ String humanReadableIp(IPAddress ip) {
   return String(ip[0]) + String(".") + String(ip[1]) + String(".") + String(ip[2]) + String(".") + String(ip[3]);
 }
 
+/*************************************************
+Returns the Red component of a 32-bit color
+**************************************************/
+uint8_t Red(uint32_t color)
+{
+    return (color >> 16) & 0xFF;
+}
 
+/*************************************************
+Returns the Green component of a 32-bit color
+**************************************************/
+uint8_t Green(uint32_t color)
+{
+    return (color >> 8) & 0xFF;
+}
+
+/*************************************************
+Returns the Blue component of a 32-bit color
+**************************************************/
+uint8_t Blue(uint32_t color)
+{
+    return color & 0xFF;
+}
+
+#endif
